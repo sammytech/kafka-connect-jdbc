@@ -151,6 +151,14 @@ public class TimestampIncrementingCriteriaTest {
         " WHERE myTable.id > ? ORDER BY myTable.id ASC",
         builder.toString()
     );
+
+    builder = builder();
+    builder.append("SELECT * FROM myTable WHERE ROWNUM <= 10");
+    criteriaInc.incrementingWhereClause(builder);
+    assertEquals(
+            "SELECT * FROM myTable WHERE ROWNUM <= 10 AND myTable.id > ? ORDER BY myTable.id ASC",
+            builder.toString()
+    );
   }
 
   @Test
@@ -228,6 +236,21 @@ public class TimestampIncrementingCriteriaTest {
         + "ORDER BY COALESCE(myTable.ts1,myTable.ts2),"
         + "myTable.id ASC",
         builder.toString()
+    );
+
+    builder = builder();
+    builder.append("SELECT * FROM myTable WHERE ROWNUM <= 10");
+    criteriaIncTs.timestampIncrementingWhereClause(builder);
+    assertEquals(
+            "SELECT * FROM myTable WHERE ROWNUM <= 10 AND "
+                    + "COALESCE(myTable.ts1,myTable.ts2) < ? "
+                    + "AND ("
+                    + "(COALESCE(myTable.ts1,myTable.ts2) = ? AND myTable.id > ?) "
+                    + "OR "
+                    + "COALESCE(myTable.ts1,myTable.ts2) > ?) "
+                    + "ORDER BY COALESCE(myTable.ts1,myTable.ts2),"
+                    + "myTable.id ASC",
+            builder.toString()
     );
   }
 
