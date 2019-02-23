@@ -181,6 +181,22 @@ public class TimestampIncrementingCriteriaTest {
         + "ASC",
         builder.toString()
     );
+
+    builder = builder();
+    builder.append("SELECT * FROM myTable WHERE ROWNUM <= 10");
+
+    criteriaTs.timestampWhereClause(builder);
+
+    assertEquals(
+            "SELECT * FROM myTable WHERE ROWNUM <= 10 AND "
+                    + "COALESCE(myTable.ts1,myTable.ts2) > ? "
+                    + "AND "
+                    + "COALESCE(myTable.ts1,myTable.ts2) < ? "
+                    + "ORDER BY "
+                    + "COALESCE(myTable.ts1,myTable.ts2) "
+                    + "ASC",
+            builder.toString()
+    );
   }
 
   @Test

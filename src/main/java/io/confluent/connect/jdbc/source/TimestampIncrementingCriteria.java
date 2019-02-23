@@ -278,6 +278,15 @@ public class TimestampIncrementingCriteria {
     return builder.toString();
   }
 
+  private void ifWhereIncluded(ExpressionBuilder builder){
+    String query = builder.toString();
+    if (query.toLowerCase().contains(" where ")) {
+      builder.append(" AND ");
+    } else {
+      builder.append(" WHERE ");
+    }
+  }
+
   protected void timestampIncrementingWhereClause(ExpressionBuilder builder) {
     // This version combines two possible conditions. The first checks timestamp == last
     // timestamp and incrementing > last incrementing. The timestamp alone would include
@@ -292,7 +301,7 @@ public class TimestampIncrementingCriteria {
     //  timestamp 1235, id 22
     //  timestamp 1236, id 23
     // We should capture both id = 22 (an update) and id = 23 (a new row)
-    builder.append(" WHERE ");
+    ifWhereIncluded(builder);
     coalesceTimestampColumns(builder);
     builder.append(" < ? AND ((");
     coalesceTimestampColumns(builder);
@@ -310,7 +319,7 @@ public class TimestampIncrementingCriteria {
   }
 
   protected void incrementingWhereClause(ExpressionBuilder builder) {
-    builder.append(" WHERE ");
+    ifWhereIncluded(builder);
     builder.append(incrementingColumn);
     builder.append(" > ?");
     builder.append(" ORDER BY ");
@@ -319,7 +328,7 @@ public class TimestampIncrementingCriteria {
   }
 
   protected void timestampWhereClause(ExpressionBuilder builder) {
-    builder.append(" WHERE ");
+    ifWhereIncluded(builder);
     coalesceTimestampColumns(builder);
     builder.append(" > ? AND ");
     coalesceTimestampColumns(builder);
