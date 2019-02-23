@@ -110,7 +110,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       //  timestamp 1235, id 22
       //  timestamp 1236, id 23
       // We should capture both id = 22 (an update) and id = 23 (a new row)
-      if (query.indexOf("where") != -1) {
+      if (query.contains("where")) {
         builder.append(" and ");
       } else {
         builder.append(" WHERE ");
@@ -130,7 +130,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
     } else if (incrementingColumn != null) {
-      if (query.indexOf("where") != -1) {
+      if (query.contains("where")) {
         builder.append(" and ");
       } else {
         builder.append(" WHERE ");
@@ -141,7 +141,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
     } else if (timestampColumn != null) {
-      if (query.indexOf("where") != -1) {
+      if (query.contains("where")) {
         builder.append(" and ");
       } else {
         builder.append(" WHERE ");
