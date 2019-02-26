@@ -89,7 +89,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String BATCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
   public static final String BATCH_SQL_MAX_ROWS_CONFIG = "batch.sql.max.rows";
-  public static final int BATCH_SQL_MAX_ROWS_DEFAULT = 100;
+  public static final int BATCH_SQL_MAX_ROWS_DEFAULT = 0;
   private static final String BATCH_SQL_MAX_ROWS_DOC = "Maximum number of rows to include in a single query batch" +
           "This setting can be used to limit the amount of data retrieved from the database";
 private static final String BATCH_SQL_MAX_ROWS_DISPLAY = "Max Sql Rows Per Batch";
@@ -191,6 +191,13 @@ private static final String BATCH_SQL_MAX_ROWS_DISPLAY = "Max Sql Rows Per Batch
       "List of tables to exclude from copying. If specified, table.whitelist may not be set.";
   public static final String TABLE_BLACKLIST_DEFAULT = "";
   private static final String TABLE_BLACKLIST_DISPLAY = "Table Blacklist";
+
+  public static final String FIELDS_BLACKLIST_CONFIG = "fields.blacklist";
+  private static final String FIELDS_BLACKLIST_DOC =
+          "List of comma-separated record value field names. If empty, all fields from the record "
+                  + "value are utilized, otherwise used to filter out all the undesired fields.\n";
+  private static final String FIELDS_BLACKLIST_DEFAULT = "";
+  private static final String FIELDS_BLACKLIST_DISPLAY = "Fields Blacklist";
 
   public static final String SCHEMA_PATTERN_CONFIG = "schema.pattern";
   private static final String SCHEMA_PATTERN_DOC =
@@ -375,6 +382,16 @@ private static final String BATCH_SQL_MAX_ROWS_DISPLAY = "Max Sql Rows Per Batch
         Width.LONG,
         TABLE_BLACKLIST_DISPLAY,
         TABLE_RECOMMENDER
+    ).define(
+            FIELDS_BLACKLIST_CONFIG,
+            Type.LIST,
+            FIELDS_BLACKLIST_DEFAULT,
+            Importance.LOW,
+            FIELDS_BLACKLIST_DOC,
+            DATABASE_GROUP,
+            ++orderInGroup,
+            Width.LONG,
+            FIELDS_BLACKLIST_DISPLAY
     ).define(
         CATALOG_PATTERN_CONFIG,
         Type.STRING,

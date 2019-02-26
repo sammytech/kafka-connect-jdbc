@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.util.TableId;
@@ -52,12 +53,13 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected ResultSet resultSet;
   protected SchemaMapping schemaMapping;
   private String loggedQueryString;
-
+  protected List<String> blacklist;
   public TableQuerier(
       DatabaseDialect dialect,
       QueryMode mode,
       String nameOrQuery,
-      String topicPrefix
+      String topicPrefix,
+      List<String> blacklistedFields
   ) {
     this.dialect = dialect;
     this.mode = mode;
@@ -65,6 +67,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     this.query = mode.equals(QueryMode.QUERY) ? nameOrQuery : null;
     this.topicPrefix = topicPrefix;
     this.lastUpdate = 0;
+    this.blacklist = blacklistedFields;
   }
 
   public long getLastUpdate() {
@@ -90,7 +93,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
       stmt = getOrCreatePreparedStatement(db);
       resultSet = executeQuery();
       String schemaName = tableId != null ? tableId.tableName() : null; // backwards compatible
-      schemaMapping = SchemaMapping.create(schemaName, resultSet.getMetaData(), dialect);
+
+      schemaMapping = SchemaMapping.create(schemaName, resultSet.getMetaData(), dialect, blacklist);
     }
   }
 

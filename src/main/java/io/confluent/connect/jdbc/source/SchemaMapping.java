@@ -23,11 +23,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.dialect.DatabaseDialect.ColumnConverter;
@@ -57,38 +53,61 @@ public final class SchemaMapping {
   public static SchemaMapping create(
       String schemaName,
       ResultSetMetaData metadata,
-      DatabaseDialect dialect
+      DatabaseDialect dialect,
+      List<String> blacklistedFields
   ) throws SQLException {
     Map<ColumnId, ColumnDefinition> colDefns = dialect.describeColumns(metadata);
     Map<String, ColumnConverter> colConvertersByFieldName = new LinkedHashMap<>();
     SchemaBuilder builder = SchemaBuilder.struct().name(schemaName);
+    SchemaBuilder kafkaBuilder = null;
+    if(!blacklistedFields.isEmpty()) {
+      kafkaBuilder = SchemaBuilder.struct().name(schemaName);
+    }
+
     int columnNumber = 0;
     for (ColumnDefinition colDefn : colDefns.values()) {
       ++columnNumber;
       String fieldName = dialect.addFieldToSchema(colDefn, builder);
+
       if (fieldName == null) {
         continue;
       }
+
       Field field = builder.field(fieldName);
       ColumnMapping mapping = new ColumnMapping(colDefn, columnNumber, field);
       ColumnConverter converter = dialect.createColumnConverter(mapping);
       colConvertersByFieldName.put(fieldName, converter);
+
+      if(kafkaBuilder != null && blacklistedFields.stream().noneMatch(colDefn.id().aliasOrName()::equalsIgnoreCase)){
+        dialect.addFieldToSchema(colDefn, kafkaBuilder);
+        Field fieldKafka = kafkaBuilder.field(fieldName);
+        ColumnMapping mappingKafka = new ColumnMapping(colDefn, columnNumber, fieldKafka);
+        ColumnConverter converterKafka = dialect.createColumnConverter(mappingKafka);
+      }
     }
     Schema schema = builder.build();
-    return new SchemaMapping(schema, colConvertersByFieldName);
+
+
+    Schema kafkaSchema = kafkaBuilder != null ? kafkaBuilder.build() : null;
+
+    return new SchemaMapping(schema, kafkaSchema, colConvertersByFieldName);
   }
 
   private final Schema schema;
+  private final Schema kafkaSchema;
   private final List<FieldSetter> fieldSetters;
 
   private SchemaMapping(
       Schema schema,
+      Schema kafkaSchema,
       Map<String, ColumnConverter> convertersByFieldName
   ) {
     assert schema != null;
     assert convertersByFieldName != null;
     assert !convertersByFieldName.isEmpty();
     this.schema = schema;
+    this.kafkaSchema = kafkaSchema;
+//    this.kafkaSchema = schema.
     List<FieldSetter> fieldSetters = new ArrayList<>(convertersByFieldName.size());
     for (Map.Entry<String, ColumnConverter> entry : convertersByFieldName.entrySet()) {
       ColumnConverter converter = entry.getValue();
@@ -101,6 +120,10 @@ public final class SchemaMapping {
 
   public Schema schema() {
     return schema;
+  }
+
+  public Schema getKafkaSchema(){
+    return kafkaSchema;
   }
 
   /**

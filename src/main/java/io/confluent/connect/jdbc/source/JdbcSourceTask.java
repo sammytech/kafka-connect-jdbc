@@ -143,10 +143,12 @@ public class JdbcSourceTask extends SourceTask {
         = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
     List<String> timestampColumns
         = config.getList(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+    List<String> blacklistedFields = config.getList(JdbcSourceTaskConfig.FIELDS_BLACKLIST_CONFIG);
     Long timestampDelayInterval
         = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
     boolean validateNonNulls
         = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
+    int sqlBatchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_SQL_MAX_ROWS_CONFIG);
     TimeZone timeZone = config.timeZone();
 
     for (String tableOrQuery : tablesOrQuery) {
@@ -193,7 +195,8 @@ public class JdbcSourceTask extends SourceTask {
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
         tableQueue.add(
-            new BulkTableQuerier(dialect, queryMode, tableOrQuery, topicPrefix)
+            new BulkTableQuerier(dialect, queryMode, tableOrQuery, topicPrefix,
+                    config.getList(JdbcSourceTaskConfig.FIELDS_BLACKLIST_CONFIG))
         );
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
         tableQueue.add(
@@ -206,7 +209,8 @@ public class JdbcSourceTask extends SourceTask {
                 incrementingColumn,
                 offset,
                 timestampDelayInterval,
-                timeZone
+                timeZone,
+                blacklistedFields, sqlBatchMaxRows
             )
         );
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
@@ -220,7 +224,8 @@ public class JdbcSourceTask extends SourceTask {
                 null,
                 offset,
                 timestampDelayInterval,
-                timeZone
+                timeZone,
+                blacklistedFields, sqlBatchMaxRows
             )
         );
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
@@ -234,7 +239,8 @@ public class JdbcSourceTask extends SourceTask {
                 incrementingColumn,
                 offset,
                 timestampDelayInterval,
-                timeZone
+                timeZone,
+                blacklistedFields, sqlBatchMaxRows
             )
         );
       }
